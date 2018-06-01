@@ -1,0 +1,12 @@
+useDynLib(student, .registration = TRUE, .fixes = "C_")
+
+
+### Imports ####################################################################
+
+## importFrom("utils", "setTxtProgressBar")
+
+
+### Exports ####################################################################
+
+## export(
+## )
