@@ -1,0 +1,6 @@
+- Need:
+  + pmvt() or pStudent()
+  + dmvt() or dStudent()
+  + rmvt() or rStudent()
+  + fit_mvt() or fitStudent(); see QRM
+- Should also work with: d = 1
