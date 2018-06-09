@@ -1,6 +1,7 @@
 - Need:
-  + pmvt() or pStudent()
-  + dmvt() or dStudent()
-  + rmvt() or rStudent()
-  + fit_mvt() or fitStudent(); see QRM
-- Should also work with: d = 1
+  + pStudent()
+  + dStudent()
+  + rStudent()
+  + fitStudent()
+- Should also work with d = 1 + with missing data
+- After next 'qrng release', remove ./src/sobol.c/.h => is in qrng
