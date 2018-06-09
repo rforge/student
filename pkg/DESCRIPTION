@@ -13,7 +13,7 @@ Author: Marius Hofert [aut, cre], Erik Hintz [aut], Christiane Lemieux [aut]
 Maintainer: Marius Hofert <marius.hofert@uwaterloo.ca>
 Depends: R (>= 3.2.0)
 Imports:
-Suggests:
+Suggests: knitr, crop
 Enhances:
 License: GPL (>= 3) | file LICENCE
 NeedsCompilation: yes
