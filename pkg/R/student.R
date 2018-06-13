@@ -1,3 +1,42 @@
+### rstudent() #################################################################
+
+##' @title Random Number Generator for a Multivariate Student t Distribution
+##' @param n sample size
+##' @param loc location vector of dimension d
+##' @param sigma covariance matrix of dimension (d, d)
+##' @param df degrees of freedom (positive real or Inf in which case samples
+##'        from N(loc, sigma) are drawn.
+##' @param factor factorization matrix of the covariance matrix sigma; a matrix
+##'        R such that R^T R = sigma. Defaults to
+##'        an upper triangular matrix. Note that this factor is used to
+##'        multiply an (n, d)-matrix of independent N(0,1) random variates
+##'        from the right to obtain a sample from N(0, sigma).
+##' @return (n, d)-matrix with t_nu(loc, sigma) samples
+##' @author Marius Hofert
+rstudent <- function(n, loc = rep(0, ncol(sigma)), sigma = diag(2), df = 3.5,
+                     factor = chol(sigma, pivot = TRUE)) # fastest; factor multiplied to the matrix Z of N(0,1)s from the *right*
+{
+    ## Checks
+    d <- length(loc)
+    dm <- dim(sigma)
+    stopifnot(n >= 1, dm == rep(d, 2), df > 0, dim(factor) == dm)
+    ## Generate Z ~ N(0, I)
+    Z <- matrix(rnorm(n * d), ncol = d) # (n, d)-matrix of N(0, 1)
+    ## Generate Y ~ N(0, sigma)
+    R <- factor[, order(attr(factor, "pivot"))] # t(L); to be multiplied to Z from the *right* (avoids t())
+    Y <- Z %*% R # (n, d) %*% (d, k) = (n, k)-matrix of N(0, sigma); allows for different k
+    ## Generate Y ~ t_nu(0, sigma)
+    ## Note: sqrt(W) for W ~ df/rchisq(n, df = df) but rchisq() calls rgamma(); see ./src/nmath/rchisq.c
+    ##       => W ~ 1/rgamma(n, shape = df/2, rate = df/2)
+    if(is.finite(df)) {
+        df2 <- df/2
+        Y <- Y / rgamma(n, shape = df2, rate = df2) # also fine for different k
+    }
+    ## Generate X ~ t_nu(loc, sigma)
+    sweep(Y, 2, loc, "+") # X
+}
+
+
 ### Auxiliary tools ############################################################
 
 ##' @title Swap Variables i and j in a, b and R

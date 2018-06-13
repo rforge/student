@@ -1,6 +1,6 @@
-\name{student}
+\name{pstudent}
 \alias{pstudent}
-\title{Multivariate Student t Distribution}
+\title{Multivariate Student t Distribution Function}
 \description{
   Evaluation of the multivariate Student t distribution function
   (including non-integer degrees of freedom).

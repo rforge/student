@@ -8,4 +8,4 @@ importFrom("stats", "pt", "qt", "sd")
 
 ### Exports ####################################################################
 
-export("pstudent")
+export("pstudent", "rstudent")
