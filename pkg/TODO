@@ -1,8 +1,8 @@
 - Need:
-  + pStudent()
-  + dStudent()
-  + rStudent()
-  + fitStudent()
+  + pStudent() or pstudent()?
+  + dStudent() or dstudent()?
+  + rStudent() or rstudent()?
+  + fitStudent() or fit_student()
 - Should also work with d = 1 + with missing data
 - rename 'a' and 'b' to 'lower' and 'upper'; 'nu' to 'df'
 - first arg should be 'upper' with default lower being '-Inf,...'

@@ -1,6 +1,6 @@
 ### Auxiliary tools ############################################################
 
-##' @title Swap Variables
+##' @title Swap Variables i and j in a, b and R
 ##' @param a vector
 ##' @param b vector
 ##' @param R covariance matrix
@@ -10,22 +10,21 @@
 ##' @author Erik Hintz
 swap <- function(a, b, R, i, j)
 {
-    q <- dim(R)[1]
+    ## Reorder a, b
     a[c(i,j)] <- a[c(j,i)]
     b[c(i,j)] <- b[c(j,i)]
-
-    woij <- setdiff(1:q,c(i,j))
+    ## Reorder R
+    woij <- setdiff(seq_len(nrow(R)), c(i,j))
     temp_i <- as.matrix(R[woij,i])
     temp_j <- as.matrix(R[woij,j])
     temp_ii <- R[i,i]
-
     R[woij,i] <- temp_j
     R[woij,j] <- temp_i
     R[i,woij] <- temp_j
     R[j,woij] <- temp_i
     R[i,i] <- R[j,j]
     R[j,j] <- temp_ii
-
+    ## Return
     list(a = a, b = b, R = R)
 }
 
@@ -68,12 +67,12 @@ precond_t <- function(a, b, R, C, q, nu)
     C[2:q,1] <- as.matrix(R[2:q,1]/C[1,1])
 
     for(j in 2:(q-1)){
-                                        #c0 <- rowSums(as.matrix(C[j:q,1:(j-1)])^2)
+        ## c0 <- rowSums(as.matrix(C[j:q,1:(j-1)])^2)
         c01<- sqrt( (nu+j-1)/(nu+sumysq))
         c1 <- c01/sqrt(diag(R)[j:q]-rowSums(as.matrix(C[j:q,1:(j-1)])^2))
         c2 <- as.matrix(C[j:q,1:j-1]) %*%y [1:(j-1)]
 
-                                        # Find i = argmin { <expected length of interval j> }
+        ## Find i = argmin { <expected length of interval j> }
         i <- which.min(pt(c1 * (b[j:q] - c2), nu+j-1) - pt(c1 * (a[j:q] - c2), nu+j-1))+j-1
 
         if(i!=j){
