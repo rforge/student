@@ -7,24 +7,21 @@
 ##' @param df degrees of freedom (positive real or Inf in which case samples
 ##'        from N(loc, sigma) are drawn.
 ##' @param factor factorization matrix of the covariance matrix sigma; a matrix
-##'        R such that R^T R = sigma. Defaults to
-##'        an upper triangular matrix. Note that this factor is used to
-##'        multiply an (n, d)-matrix of independent N(0,1) random variates
-##'        from the right to obtain a sample from N(0, sigma).
+##'        R such that R^T R = sigma. R is multiplied to the (n, d)-matrix of
+##'        independent N(0,1) random variates in the construction from the *right*
+##'        (hence the notation).
 ##' @return (n, d)-matrix with t_nu(loc, sigma) samples
 ##' @author Marius Hofert
-rstudent <- function(n, loc = rep(0, ncol(sigma)), sigma = diag(2), df = 3.5,
-                     factor = chol(sigma, pivot = TRUE)) # fastest; factor multiplied to the matrix Z of N(0,1)s from the *right*
+rstudent <- function(n, loc = rep(0, nrow(factor)), sigma, df = 3.5,
+                     factor = factorize(sigma))
 {
     ## Checks
     d <- length(loc)
-    dm <- dim(sigma)
-    stopifnot(n >= 1, dm == rep(d, 2), df > 0, dim(factor) == dm)
+    stopifnot(n >= 1, nrow(factor) == d, df > 0)
     ## Generate Z ~ N(0, I)
     Z <- matrix(rnorm(n * d), ncol = d) # (n, d)-matrix of N(0, 1)
     ## Generate Y ~ N(0, sigma)
-    R <- factor[, order(attr(factor, "pivot"))] # t(L); to be multiplied to Z from the *right* (avoids t())
-    Y <- Z %*% R # (n, d) %*% (d, k) = (n, k)-matrix of N(0, sigma); allows for different k
+    Y <- Z %*% factor # (n, d) %*% (d, k) = (n, k)-matrix of N(0, sigma); allows for different k
     ## Generate Y ~ t_nu(0, sigma)
     ## Note: sqrt(W) for W ~ df/rchisq(n, df = df) but rchisq() calls rgamma(); see ./src/nmath/rchisq.c
     ##       => W ~ 1/rgamma(n, shape = df/2, rate = df/2)
@@ -34,37 +31,6 @@ rstudent <- function(n, loc = rep(0, ncol(sigma)), sigma = diag(2), df = 3.5,
     }
     ## Generate X ~ t_nu(loc, sigma)
     sweep(Y, 2, loc, "+") # X
-}
-
-
-### Auxiliary tools ############################################################
-
-##' @title Swap Variables i and j in a, b and R
-##' @param a vector
-##' @param b vector
-##' @param R covariance matrix
-##' @param i which variables shall be switched?
-##' @param j which variables shall be switched?
-##' @return list a, b, R after variables i and j have been switched.
-##' @author Erik Hintz
-swap <- function(a, b, R, i, j)
-{
-    ## Reorder a, b
-    a[c(i,j)] <- a[c(j,i)]
-    b[c(i,j)] <- b[c(j,i)]
-    ## Reorder R
-    woij <- setdiff(seq_len(nrow(R)), c(i,j))
-    temp_i <- as.matrix(R[woij,i])
-    temp_j <- as.matrix(R[woij,j])
-    temp_ii <- R[i,i]
-    R[woij,i] <- temp_j
-    R[woij,j] <- temp_i
-    R[i,woij] <- temp_j
-    R[j,woij] <- temp_i
-    R[i,i] <- R[j,j]
-    R[j,j] <- temp_ii
-    ## Return
-    list(a = a, b = b, R = R)
 }
 
 ##' @title Re-order Variables According to their Expected Integration Limits

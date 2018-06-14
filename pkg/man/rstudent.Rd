@@ -2,12 +2,12 @@
 \alias{rstudent}
 \title{Random Number Generator for the Multivariate Student t Distribution}
 \description{
-  Generate vectors of random variates from the multivariate Student \eqn{t}
+  Generate vectors of random variates from the multivariate Student \emph{t}
   distribution.
 }
 \usage{
-rstudent(n, loc = rep(0, ncol(sigma)), sigma = diag(2), df = 3.5,
-         factor = chol(sigma, pivot = TRUE))
+rstudent(n, loc = rep(0, nrow(factor)), sigma, df = 3.5,
+         factor = factorize(sigma))
 }
 \arguments{
   \item{n}{sample size \eqn{n} (positive integer).}
@@ -18,34 +18,63 @@ rstudent(n, loc = rep(0, ncol(sigma)), sigma = diag(2), df = 3.5,
     mean vector \code{loc} and covariance matrix \code{sigma} are
     drawn).}
   \item{factor}{factorization matrix of the covariance matrix
-    \code{sigma}; a matrix \eqn{R} with \eqn{d} rows which is internally
+    \code{sigma}; a matrix \eqn{R} with \eqn{d} rows such that \eqn{R^T
+    R} equals \code{sigma}. This matrix \eqn{R} is internally
     multiplied from the right to an \eqn{(n, d)}-matrix of independent
-    standard normals to obtain a sample to obtain a sample from
-    a multivariate normal with zero mean vector and covariance matrix
-    \code{sigma}.}
+    standard normals to obtain a sample from a multivariate normal
+    with zero mean vector and covariance matrix \code{sigma}.}
 }
 \value{
   \code{rstudent()} returns an \eqn{(n, d)}-matrix containing \eqn{n}
-  samples of the \eqn{d}-dimensional Student $t$ distribution with
+  samples of the \eqn{d}-dimensional Student \emph{t} distribution with
   \code{df} degrees of freedom, location vector \code{loc} and
   covariance matrix \code{sigma}.
 }
 \details{
-  TODO: fix 't' problem above; mention why df 3.5; make nice example below
+  Internally used is \code{factor}, so \code{sigma} is not required
+  to be provided if \code{factor} is given.
+
+  The default factorization used to obtain \code{factor} is the Cholesky
+  decomposition. To this end, \code{sigma} needs to have full rank.
+  See \code{\link{factorize}()} for other options.
+
+  The number of rows of \code{factor} are the dimension \eqn{d} of
+  the sample. Typically (but not necessarily), \code{factor} is square.
+%%    The default for the degrees of freedom were chosen for two
+%%    reasons: first, because of financial return data, which often
+%%    tends to have a degrees of freedom around 3.5; second, for
+%%    pedagogical reasons, to show that the degrees of freedom
+%%    parameter does not have to be an integer.
 }
 \author{Marius Hofert}
-%% \references{
-%%   TODO: QRM book (everywhere; make other help files, too)
-%% }
+\references{
+  McNeil, A. J., Frey, R., and Embrechts, P. (2015).
+  \emph{Quantitative Risk Management: Concepts, Techniques, Tools}.
+  Princeton University Press.
+}
+\seealso{
+  \code{\link{factorize}()}
+}
 \examples{
 ## Generate a random correlation matrix in dimension 5
 d <- 5
 set.seed(271)
 A <- matrix(runif(d * d), ncol = d)
 P <- cov2cor(A \%*\% t(A))
-## Draw random variates
+## Draw random variates and compare
 n <- 1000
+set.seed(157)
 X <- rstudent(n, sigma = P)
-## Compare with providing A directly (different sample than default) and with providing R directly (same sample)
+set.seed(157)
+X. <- rstudent(n, factor = A)
+set.seed(157)
+X.. <- rstudent(n, factor = chol(P))
+## Plot comparison
+xlim <- range(X[,1], X.[,1], X..[,1])
+ylim <- range(X[,2], X.[,2], X..[,2])
+plot(X, xlab = expression(X[1]), ylab = expression(X[2]),
+     xlim = xlim, ylim = ylim)
+points(X.,  col = "royalblue3") # different because of different factorization
+points(X.., col = "maroon3") # again different because of Cholesky decomposition with pivoting
 }
 \keyword{distribution}

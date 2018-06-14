@@ -3,9 +3,12 @@ useDynLib(student, .registration = TRUE)
 
 ### Imports ####################################################################
 
-importFrom("stats", "pt", "qt", "sd")
+importFrom("stats",
+           "rnorm", "pt", "qt", "rgamma",
+           "sd")
 
 
 ### Exports ####################################################################
 
 export("pstudent", "rstudent")
+export("factorize")
