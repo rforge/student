@@ -64,17 +64,9 @@ P <- cov2cor(A \%*\% t(A))
 ## Draw random variates and compare
 n <- 1000
 set.seed(157)
-X <- rstudent(n, sigma = P)
+X <- rstudent(n, sigma = P) # providing sigma
 set.seed(157)
-X. <- rstudent(n, factor = A)
-set.seed(157)
-X.. <- rstudent(n, factor = chol(P))
-## Plot comparison
-xlim <- range(X[,1], X.[,1], X..[,1])
-ylim <- range(X[,2], X.[,2], X..[,2])
-plot(X, xlab = expression(X[1]), ylab = expression(X[2]),
-     xlim = xlim, ylim = ylim)
-points(X.,  col = "royalblue3") # different because of different factorization
-points(X.., col = "maroon3") # again different because of Cholesky decomposition with pivoting
+X. <- rstudent(n, factor = chol(P)) # directly the factor
+stopifnot(all.equal(X, X.))
 }
 \keyword{distribution}
