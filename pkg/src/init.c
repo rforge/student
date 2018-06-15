@@ -5,14 +5,12 @@
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
 
-#include "sobol.h"
 #include "evalf.h"
 #include "evalfbonly.h"
 
 static const R_CallMethodDef callMethods[] = {
 	{"evalf_",      (DL_FUNC) &evalf_, 9},
 	{"evalfbonly_", (DL_FUNC) &evalfbonly_, 8},
-	{"sobol_",      (DL_FUNC) &sobol_, 4},
 	{NULL, NULL, 0}
 };
 

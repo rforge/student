@@ -1,16 +1,13 @@
-- Need:
-  + pStudent() or pstudent()?
-  + dStudent() or dstudent()?
-  + rStudent() or rstudent()?
-  + fitStudent() or fit_student()
-- Should also work with d = 1 + with missing data
+- Need fitStudent()
+- rStudent() should also work with d = 1
+- dStudent() and pStudent()
+  should also work with d = 1 and with missing data
 - rename 'a' and 'b' to 'lower' and 'upper'; 'nu' to 'df'
 - first arg should be 'upper' with default lower being '-Inf,...'
-- R should be 'sigma' and we need a 'standardized = FALSE' argument;
+- R should be 'scale' and we need a 'standardized = FALSE' argument;
   if standardized = TRUE, loc = 0 and sigma = correlation matrix is assumed
-- there should be 'loc' (location vector) with default rep(0, d)
+  ... or so)
 - 'swap' needs to be improved
 - 'func' not needed if 'base case' in pstudent() is part of the loop
   (only one call necessary then, so can be omitted)
 - more intuitive names for arguments concerning tolerance(s)
-- After next 'qrng release', remove ./src/sobol.c/.h => is in qrng
