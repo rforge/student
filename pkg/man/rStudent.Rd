@@ -57,11 +57,19 @@ set.seed(271)
 A <- matrix(runif(d * d), ncol = d)
 P <- cov2cor(A \%*\% t(A))
 ## Draw random variates and compare
+df <- 3.5
 n <- 1000
 set.seed(157)
-X <- rStudent(n, df = 3.5, scale = P) # providing scale
+X <- rStudent(n, df = df, scale = P) # providing scale
 set.seed(157)
-X. <- rStudent(n, df = 3.5, factor = chol(P)) # providing directly the factor
+X. <- rStudent(n, df = df, factor = chol(P)) # providing directly the factor
 stopifnot(all.equal(X, X.))
+
+## Univariate case
+set.seed(157)
+X.1d <- rStudent(n, df = df, factor = 1/2)
+set.seed(157)
+X.1d. <- rStudent(n, df = df, factor = 1)/2 # manual scaling
+stopifnot(all.equal(X.1d, X.1d.))
 }
 \keyword{distribution}

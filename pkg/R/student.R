@@ -8,22 +8,24 @@
 ##' @param scale covariance matrix of dimension (d, d)
 ##' @param factor factorization matrix of the covariance matrix scale;
 ##'        caution: this has to be an *upper triangular* matrix R
-##'        such that R^T R = scale here (otherwise det(scale) not correctly
-##'        computed)
+##'        such that R^T R = scale here (otherwise det(scale) not computed correctly)
 ##' @return n-vector with t_nu(loc, scale) density values
 ##' @author Marius Hofert
 dStudent <- function(x, df, loc = rep(0, d), scale,
-                     factor = tryCatch(factorize(scale), error = function(e) e), # 'factor' needs to be triangular here (for det() to be correctly computed below)!
+                     factor = tryCatch(factorize(scale), error = function(e) e), # needs to be triangular!
                      log = FALSE)
 {
     if(!is.matrix(x)) x <- rbind(x)
     n <- nrow(x)
     d <- ncol(x)
     stopifnot(df > 0, length(loc) == d)
+    notNA <- apply(!is.na(x), 1, all)
     lres <- rep(-Inf, n)
+    lres[!notNA] <- NA
+    x <- x[notNA,] # available points
     tx <- t(x) # (d, n)-matrix
     if(inherits(factor, "error") || is.null(factor)) {
-        lres[colSums(tx == loc) == d] <- Inf
+        lres[notNA & (colSums(tx == loc) == d)] <- Inf
     } else {
         ## Solve R^T * z = x - mu for z, so z = (R^T)^{-1} * (x - mu) (a (d, d)-matrix)
         ## => z^2 (=> componentwise) = z^T z = (x - mu)^T * ((R^T)^{-1})^T (R^T)^{-1} (x - mu)
@@ -32,15 +34,17 @@ dStudent <- function(x, df, loc = rep(0, d), scale,
         ##                           = (x - mu)^T * scale^{-1} * (x - mu) = quadratic form
         z <- backsolve(factor, tx - loc, transpose = TRUE)
         qform <- colSums(z^2) # = sum(z^T z)
-        lrdet <- sum(log(diag(factor))) # log(sqrt(det(scale))) = log(det(scale))/2 = log(det(R^T R))/2 = log(det(R)^2)/2 = log(prod(diag(R))) = sum(log(diag(R)))
-        lres <- if(is.finite(df)) {
-                    df.d.2 <- (df + d) / 2
-                    lgamma(df.d.2) - lgamma(df/2) - (d/2) * log(df * pi) - lrdet - df.d.2 * log1p(qform / df)
-                } else {
-                    - (d/2) * log(2 * pi) - lrdet - qform/2
-                }
+        ## log(sqrt(det(scale))) = log(det(scale))/2 = log(det(R^T R))/2 = log(det(R)^2)/2
+        ## = log(prod(diag(R))) = sum(log(diag(R)))
+        lrdet <- sum(log(diag(factor)))
+        lres[notNA] <- if(is.finite(df)) {
+                           df.d.2 <- (df + d) / 2
+                           lgamma(df.d.2) - lgamma(df/2) - (d/2) * log(df * pi) - lrdet - df.d.2 * log1p(qform / df)
+                       } else {
+                           - (d/2) * log(2 * pi) - lrdet - qform/2
+                       }
     }
-    if(log) lres else exp(lres)
+    if(log) lres else exp(lres) # also works with NA, -Inf, Inf
 }
 
 
@@ -61,7 +65,7 @@ dStudent <- function(x, df, loc = rep(0, d), scale,
 rStudent <- function(n, df, loc = rep(0, d), scale, factor = factorize(scale))
 {
     ## Checks
-    d <- nrow(factor)
+    d <- nrow(as.matrix(factor))
     stopifnot(n >= 1, df > 0)
     ## Generate Z ~ N(0, I)
     Z <- matrix(rnorm(n * d), ncol = d) # (n, d)-matrix of N(0, 1)
