@@ -6,6 +6,7 @@ useDynLib(student, .registration = TRUE)
 importFrom("stats",
            "rnorm", "pt", "qt", "rgamma",
            "sd")
+importFrom("qrng", "sobol")
 
 
 ### Exports ####################################################################

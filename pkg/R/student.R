@@ -33,6 +33,9 @@ rstudent <- function(n, loc = rep(0, nrow(factor)), sigma, df = 3.5,
     sweep(Y, 2, loc, "+") # X
 }
 
+
+### pstudent() #################################################################
+
 ##' @title Re-order Variables According to their Expected Integration Limits
 ##'        (Precondition). See [genzbretz2002, p. 957]
 ##' @param C Cholesky (lower triangular) factor of the covariance matrix R
@@ -109,35 +112,7 @@ precond_t <- function(a, b, R, C, q, nu)
     list(a = a, b = b, R = R, C = C, d = d)
 }
 
-
-### 1.2 Sobol sequence ###############################################
-
-##' @title Sobol sequence
-##' @param n number of points
-##' @param d dimension
-##' @param randomize logical indicating whether a digital shift should be
-##'        included
-##' @param skip number of initial terms in the sequence that are skipped
-##'        (skip = 0 means the sequence starts with the origin)
-##' @return an (n, d)-matrix (an n-vector if d=1) containing the
-##'         quasi-random sequence
-##' @author Marius Hofert
-sobol <- function(n, d = 1, randomize = FALSE, skip = 0)
-{
-    stopifnot(n >= 1, d >= 1, is.logical(randomize), skip >= 0)
-    if(n > 2^31-1)
-        stop("'n' must be <= 2^31-1")
-    if(d > 16510)
-        stop("'d' must be <= 16510")
-    ## sobol_ <- NULL # to make CRAN check happy (for some reason not required here)
-    u <- .Call(sobol_, n, d, randomize, skip)
-    if(d == 1) as.vector(u) else u
-}
-
-
-### 1.3 Evaluating the integrand ###############################################
-
-##' @title Integrand - switches between f_ and g_ depending on formt and also generates U (sobol or prng)
+##' @title Evaluating the Integrand
 ##' @param n sample size
 ##' @param skip skip for sobol
 ##' @param C Cholesky factor
@@ -147,11 +122,11 @@ sobol <- function(n, d = 1, randomize = FALSE, skip = 0)
 ##' @param ... all the other parameters same as pstudent
 ##' @return mean((f(U)+f(1-U))/2) (scalar)
 ##' @author Erik Hintz
+##' @note Switches between f_ and g_ depending on formt
 func <- function(n, skip, a, b, C, q, nu, ONE, ZERO, allinfina)
 {
 
     U <- sobol(n = n, d = (q - 1), randomize = TRUE, skip = skip)
-
     if(allinfina){
         m <- .Call("evalfbonly_",
                    n    = as.integer(n),
@@ -177,57 +152,50 @@ func <- function(n, skip, a, b, C, q, nu, ONE, ZERO, allinfina)
     return(m)
 }
 
-
-
-
-### 1.3 Evaluating the multivariate t distribution and t copula ################
-
 ##' @title Distribution Function of the Multivariate t Distribution
-##' @param a,b limits.
+##' @param a vector of lower limits
+##' @param b vector of upper limits
 ##' @param R covariance matrix
 ##' @param nu degrees of freedom
 ##' @param gam,eps,Nmax,N,n_init tuning parameters. N=number of rep'ns to get sigmahat, algorithm runs unitl gam*sighat < eps or total number evaluation >= Nmax. First loop uses n_init samples in each of the N runs.
 ##' @param precond logical. If TRUE, preconditioning as described in [genzbretz2002] pp. 955-956 is performed.
 ##' @author Erik Hintz
-##'
 pstudent <- function(a, b, R, nu, gam = 3.3, eps = 0.001, Nmax = 1e8, N = 10, n_init = 2^5, precond = TRUE)
 {
     if(!is.matrix(R)) R <- as.matrix(R)
-
     q <- dim(R)[1] # dimension of the problem
-
-                                        # some checking:
+    ## Checks
     if( length(a) != length(b) ) stop("Lenghts of a and b differ")
     if( any(a > b) ) stop("a needs to be smaller than b")
     if( q != length(a) ) stop("Dimension of R does not match dimension of a")
 
-                                        # find infinite limits:
+    ## Find infinite limits
     infina  <-  (a == -Inf)
     infinb  <-  (b == Inf)
     infinab <-  infina * infinb
 
-                                        # check if all a_i are -Inf
+    ## Check if all a_i are -Inf
     allinfina <- (sum(infina)==q)
 
-                                        #remove double infinities:
-    if( sum(infinab) >0 ){
+    ## Remove double infinities
+    if( sum(infinab) >0 )
+    {
         whichdoubleinf <- which( infinab == TRUE)
         a <- a[ -whichdoubleinf ]
         b <- b[ -whichdoubleinf ]
         R <- R[ -whichdoubleinf, -whichdoubleinf ]
-
-                                        #update dimension
+        ## Update dimension
         q <- dim(R)[1]
     }
 
-                                        # deal with the univariate case
-    if(q==1) return( pt(b, df = nu)-pt(a, df = nu) )
+    ## Deal with the univariate case
+    if(q == 1) return( pt(b, df = nu) - pt(a, df = nu) )
 
-                                        # get Cholesky factor (lower triangular)
+    ## Get Cholesky factor (lower triangular)
     C <- t(chol(R))
 
-                                        # precondtioning, i.e. resorting the limits (cf precond_t). We only do that for q>2
-    if(precond && q>2){
+    ## precondtioning (resorting the limits (cf precond_t); only for q > 2)
+    if(precond && q>2) {
         temp <- precond_t(a, b, R, C, q, nu)
         a <- temp$a
         b <- temp$b
@@ -240,12 +208,11 @@ pstudent <- function(a, b, R, nu, gam = 3.3, eps = 0.001, Nmax = 1e8, N = 10, n_
 
     ONE <- 1-.Machine$double.neg.eps
     ZERO <- .Machine$double.eps
-    seed <- .Random.seed   # need to reset to the seed later when sobol is being used.
+    seed <- .Random.seed # need to reset to the seed later when sobol is being used.
 
-    for(l in 1:N){
+    for(l in 1:N)
         T.[l] <- func(n = n., skip = 0, a = a, b = b, C = C, q = q, nu = nu, ONE = ONE, ZERO = ZERO, allinfina = allinfina)
-                                        # func returns the average of f(u) and f(1-u)
-    }
+        ## func returns the average of f(u) and f(1-u)
     N. <- 2 * N * n. # N. will count the total number of f. evaluations
 
     sig <- sd(T.)
@@ -254,14 +221,10 @@ pstudent <- function(a, b, R, nu, gam = 3.3, eps = 0.001, Nmax = 1e8, N = 10, n_
     i. <- 0
     while(err > eps && N. < Nmax)
     {
-
         .Random.seed <- seed # reset seed to have the same shifts in sobol( ... )
-
         for(l in 1:N)
-        {
             T.[l] <- ( T.[l] + func(n = n., skip = n.,  a = a, b = b, C = C, q = q, nu = nu, ONE = ONE, ZERO = ZERO, allinfina = allinfina) )/2
-            ## Note that T.[l] and func(...) both depend on n. evaluations; hence we can just average them
-        }
+        ## Note that T.[l] and func(...) both depend on n. evaluations; hence we can just average them
         N. <- N. + 2 * N * n.
         n. <- 2 * n.
         sig <- sd(T.)
@@ -272,15 +235,15 @@ pstudent <- function(a, b, R, nu, gam = 3.3, eps = 0.001, Nmax = 1e8, N = 10, n_
     list(Prob = T, N = N., i = i., ErrEst = err)
 }
 
-##' @title Evaluate t Copulas
-##' @param u (n, d) matrix of evaluation points
-##' @param R covariance matrix
-##' @param nu degrees of freedom
-##' @return list of four: estimated prob, total number of function evaluations needed, number of iterations
-##'         in the while loop, estimated error
-##' @author Erik Hintz and Marius Hofert
-t_cop_prob <- function(u, R, nu)
-{
-    if(!is.matrix(u)) u <- rbind(u)
-    t_prob(rep(-Inf, ncol(u)), b = qt(u, nu), R = R, nu = nu)
-}
+## ##' @title Evaluate t Copulas
+## ##' @param u (n, d) matrix of evaluation points
+## ##' @param R covariance matrix
+## ##' @param nu degrees of freedom
+## ##' @return list of four: estimated prob, total number of function evaluations needed, number of iterations
+## ##'         in the while loop, estimated error
+## ##' @author Erik Hintz and Marius Hofert
+## t_cop_prob <- function(u, R, nu)
+## {
+##     if(!is.matrix(u)) u <- rbind(u)
+##     t_prob(rep(-Inf, ncol(u)), b = qt(u, nu), R = R, nu = nu)
+## }
