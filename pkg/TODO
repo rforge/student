@@ -1,4 +1,5 @@
 - Need fitStudent(): check what other packages do:
+
 - Other multivariate t packages:
   + monomvn (estimation under monotone pattern missing data; MLE & Bayesian)
   + mvnfast (no pStudent(), simulation, density, Mahalanobis distances)
@@ -6,6 +7,7 @@
   + MVT (studentFit(); for fixed nu (= eta here), estimates location and scale; paper mentions EM Algorithm)
   + mvtnorm (clear; no fitting, no non-integer dof, qmvt() [equicoordinate quantile function])
   + QRM (fit.mst())
+
 - pStudent(): should work with d = 1 and with missing data
 - rename 'a' and 'b' to 'lower' and 'upper'; 'nu' to 'df'
 - first arg should be 'upper' with default lower being '-Inf,...'
