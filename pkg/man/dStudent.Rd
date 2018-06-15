@@ -58,14 +58,14 @@ dStudent(x, df, loc = rep(0, d), scale,
 d <- 3
 set.seed(271)
 A <- matrix(runif(d * d), ncol = d)
-P <- cov2cor(A %*% t(A))
-## t_3.5
+P <- cov2cor(A \%*\% t(A))
+## Evaluate t_{3.5} density
 x <- matrix(1:12/12, ncol = d) # evaluation points
-dt <- dstudent(x, df = 3.5, scale = P)
+dt <- dStudent(x, df = 3.5, scale = P)
 stopifnot(all.equal(dt, c(0.013266542, 0.011967156, 0.010760575, 0.009648682),
                     tol = 1e-7))
-## normal
-dn <- dstudent(x, df = Inf, scale = P)
+## Evaluate normal density
+dn <- dStudent(x, df = Inf, scale = P)
 stopifnot(all.equal(dn, c(0.013083858, 0.011141923, 0.009389987, 0.007831596),
                     tol = 1e-7))
 }

@@ -41,15 +41,15 @@ pStudent(a, b, R, nu, gam = 3.3, eps = 0.001, Nmax = 1e8, N = 10,
 %%   TODO
 %% }
 \examples{
-## Generate a random correlation matrix in dimension 5
-d <- 5
+## Generate a random correlation matrix in three dimensions
+d <- 3
 set.seed(271)
 A <- matrix(runif(d * d), ncol = d)
 P <- cov2cor(A \%*\% t(A))
-## Evaluate pStudent()
+## Evaluate t_{3.5} distribution function
 a <- runif(d) * sqrt(d) * (-3) # random lower limit
 b <- runif(d) * sqrt(d) * 3 # random upper limit
-df <- 2.5 # degrees of freedom
-pStudent(a = a, b = b, R = P, nu = df)
+pt <- pStudent(a = a, b = b, R = P, nu = 3.5)
+stopifnot(all.equal(pt$Prob, 0.8061, tol = 5e-4))
 }
 \keyword{distribution}

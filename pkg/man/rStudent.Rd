@@ -6,8 +6,7 @@
   distribution.
 }
 \usage{
-rStudent(n, loc = rep(0, nrow(factor)), scale, df = 3.5,
-         factor = factorize(scale))
+rStudent(n, df, loc = rep(0, d), scale, factor = factorize(scale))
 }
 \arguments{
   \item{n}{sample size \eqn{n} (positive integer).}
@@ -56,13 +55,13 @@ rStudent(n, loc = rep(0, nrow(factor)), scale, df = 3.5,
 d <- 3
 set.seed(271)
 A <- matrix(runif(d * d), ncol = d)
-P <- cov2cor(A %*% t(A))
+P <- cov2cor(A \%*\% t(A))
 ## Draw random variates and compare
 n <- 1000
 set.seed(157)
-X <- rStudent(n, scale = P) # providing scale
+X <- rStudent(n, df = 3.5, scale = P) # providing scale
 set.seed(157)
-X. <- rStudent(n, factor = chol(P)) # providing directly the factor
+X. <- rStudent(n, df = 3.5, factor = chol(P)) # providing directly the factor
 stopifnot(all.equal(X, X.))
 }
 \keyword{distribution}
