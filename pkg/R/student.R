@@ -3,17 +3,17 @@
 ##' @title Density of a Multivariate Student t Distribution
 ##' @param x (n, d)-matrix of evaluation points
 ##' @param df degrees of freedom (positive real or Inf in which case the density
-##'        of a N(loc, sigma) is evaluated)
+##'        of a N(loc, scale) is evaluated)
 ##' @param loc location vector of dimension d
-##' @param sigma covariance matrix of dimension (d, d)
-##' @param factor factorization matrix of the covariance matrix sigma;
+##' @param scale covariance matrix of dimension (d, d)
+##' @param factor factorization matrix of the covariance matrix scale;
 ##'        caution: this has to be an *upper triangular* matrix R
-##'        such that R^T R = sigma here (otherwise det(sigma) not correctly
+##'        such that R^T R = scale here (otherwise det(scale) not correctly
 ##'        computed)
-##' @return n-vector with t_nu(loc, sigma) density values
+##' @return n-vector with t_nu(loc, scale) density values
 ##' @author Marius Hofert
-dStudent <- function(x, df, loc = rep(0, d), sigma,
-                     factor = tryCatch(factorize(sigma), error = function(e) e), # 'factor' needs to be triangular here (for det() to be correctly computed below)!
+dStudent <- function(x, df, loc = rep(0, d), scale,
+                     factor = tryCatch(factorize(scale), error = function(e) e), # 'factor' needs to be triangular here (for det() to be correctly computed below)!
                      log = FALSE)
 {
     if(!is.matrix(x)) x <- rbind(x)
@@ -29,10 +29,10 @@ dStudent <- function(x, df, loc = rep(0, d), sigma,
         ## => z^2 (=> componentwise) = z^T z = (x - mu)^T * ((R^T)^{-1})^T (R^T)^{-1} (x - mu)
         ##                           = z^T z = (x - mu)^T * R^{-1} (R^T)^{-1} (x - mu)
         ##                           = (x - mu)^T * (R^T R)^{-1} * (x - mu)
-        ##                           = (x - mu)^T * sigma^{-1} * (x - mu) = quadratic form
+        ##                           = (x - mu)^T * scale^{-1} * (x - mu) = quadratic form
         z <- backsolve(factor, tx - loc, transpose = TRUE)
         qform <- colSums(z^2) # = sum(z^T z)
-        lrdet <- sum(log(diag(factor))) # log(sqrt(det(sigma))) = log(det(sigma))/2 = log(det(R^T R))/2 = log(det(R)^2)/2 = log(prod(diag(R))) = sum(log(diag(R)))
+        lrdet <- sum(log(diag(factor))) # log(sqrt(det(scale))) = log(det(scale))/2 = log(det(R^T R))/2 = log(det(R)^2)/2 = log(prod(diag(R))) = sum(log(diag(R)))
         lres <- if(is.finite(df)) {
                     df.d.2 <- (df + d) / 2
                     lgamma(df.d.2) - lgamma(df/2) - (d/2) * log(df * pi) - lrdet - df.d.2 * log1p(qform / df)
@@ -49,32 +49,32 @@ dStudent <- function(x, df, loc = rep(0, d), sigma,
 ##' @title Random Number Generator for a Multivariate Student t Distribution
 ##' @param n sample size
 ##' @param df degrees of freedom (positive real or Inf in which case samples
-##'        from N(loc, sigma) are drawn).
+##'        from N(loc, scale) are drawn).
 ##' @param loc location vector of dimension d
-##' @param sigma covariance matrix of dimension (d, d)
-##' @param factor factorization matrix of the covariance matrix sigma; a matrix
-##'        R such that R^T R = sigma. R is multiplied to the (n, d)-matrix of
+##' @param scale covariance matrix of dimension (d, d)
+##' @param factor factorization matrix of the covariance matrix scale; a matrix
+##'        R such that R^T R = scale. R is multiplied to the (n, d)-matrix of
 ##'        independent N(0,1) random variates in the construction from the *right*
 ##'        (hence the notation).
-##' @return (n, d)-matrix with t_nu(loc, sigma) samples
+##' @return (n, d)-matrix with t_nu(loc, scale) samples
 ##' @author Marius Hofert
-rStudent <- function(n, df, loc = rep(0, d), sigma, factor = factorize(sigma))
+rStudent <- function(n, df, loc = rep(0, d), scale, factor = factorize(scale))
 {
     ## Checks
     d <- nrow(factor)
     stopifnot(n >= 1, df > 0)
     ## Generate Z ~ N(0, I)
     Z <- matrix(rnorm(n * d), ncol = d) # (n, d)-matrix of N(0, 1)
-    ## Generate Y ~ N(0, sigma)
-    Y <- Z %*% factor # (n, d) %*% (d, k) = (n, k)-matrix of N(0, sigma); allows for different k
-    ## Generate Y ~ t_nu(0, sigma)
+    ## Generate Y ~ N(0, scale)
+    Y <- Z %*% factor # (n, d) %*% (d, k) = (n, k)-matrix of N(0, scale); allows for different k
+    ## Generate Y ~ t_nu(0, scale)
     ## Note: sqrt(W) for W ~ df/rchisq(n, df = df) but rchisq() calls rgamma(); see ./src/nmath/rchisq.c
     ##       => W ~ 1/rgamma(n, shape = df/2, rate = df/2)
     if(is.finite(df)) {
         df2 <- df/2
         Y <- Y / rgamma(n, shape = df2, rate = df2) # also fine for different k
     }
-    ## Generate X ~ t_nu(loc, sigma)
+    ## Generate X ~ t_nu(loc, scale)
     sweep(Y, 2, loc, "+") # X
 }
 
