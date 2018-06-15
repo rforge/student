@@ -11,5 +11,5 @@ importFrom("qrng", "sobol")
 
 ### Exports ####################################################################
 
-export("pstudent", "rstudent")
+export("dStudent", "pStudent", "rStudent")
 export("factorize")

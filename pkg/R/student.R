@@ -1,23 +1,68 @@
-### rstudent() #################################################################
+### dStudent() #################################################################
+
+##' @title Density of a Multivariate Student t Distribution
+##' @param x (n, d)-matrix of evaluation points
+##' @param df degrees of freedom (positive real or Inf in which case the density
+##'        of a N(loc, sigma) is evaluated)
+##' @param loc location vector of dimension d
+##' @param sigma covariance matrix of dimension (d, d)
+##' @param factor factorization matrix of the covariance matrix sigma;
+##'        caution: this has to be an *upper triangular* matrix R
+##'        such that R^T R = sigma here (otherwise det(sigma) not correctly
+##'        computed)
+##' @return n-vector with t_nu(loc, sigma) density values
+##' @author Marius Hofert
+dStudent <- function(x, df, loc = rep(0, d), sigma,
+                     factor = tryCatch(factorize(sigma), error = function(e) e), # 'factor' needs to be triangular here (for det() to be correctly computed below)!
+                     log = FALSE)
+{
+    if(!is.matrix(x)) x <- rbind(x)
+    n <- nrow(x)
+    d <- ncol(x)
+    stopifnot(df > 0, length(loc) == d)
+    lres <- rep(-Inf, n)
+    tx <- t(x) # (d, n)-matrix
+    if(inherits(factor, "error") || is.null(factor)) {
+        lres[colSums(tx == loc) == d] <- Inf
+    } else {
+        ## Solve R^T * z = x - mu for z, so z = (R^T)^{-1} * (x - mu) (a (d, d)-matrix)
+        ## => z^2 (=> componentwise) = z^T z = (x - mu)^T * ((R^T)^{-1})^T (R^T)^{-1} (x - mu)
+        ##                           = z^T z = (x - mu)^T * R^{-1} (R^T)^{-1} (x - mu)
+        ##                           = (x - mu)^T * (R^T R)^{-1} * (x - mu)
+        ##                           = (x - mu)^T * sigma^{-1} * (x - mu) = quadratic form
+        z <- backsolve(factor, tx - loc, transpose = TRUE)
+        qform <- colSums(z^2) # = sum(z^T z)
+        lrdet <- sum(log(diag(factor))) # log(sqrt(det(sigma))) = log(det(sigma))/2 = log(det(R^T R))/2 = log(det(R)^2)/2 = log(prod(diag(R))) = sum(log(diag(R)))
+        lres <- if(is.finite(df)) {
+                    df.d.2 <- (df + d) / 2
+                    lgamma(df.d.2) - lgamma(df/2) - (d/2) * log(df * pi) - lrdet - df.d.2 * log1p(qform / df)
+                } else {
+                    - (d/2) * log(2 * pi) - lrdet - qform/2
+                }
+    }
+    if(log) lres else exp(lres)
+}
+
+
+### rStudent() #################################################################
 
 ##' @title Random Number Generator for a Multivariate Student t Distribution
 ##' @param n sample size
+##' @param df degrees of freedom (positive real or Inf in which case samples
+##'        from N(loc, sigma) are drawn).
 ##' @param loc location vector of dimension d
 ##' @param sigma covariance matrix of dimension (d, d)
-##' @param df degrees of freedom (positive real or Inf in which case samples
-##'        from N(loc, sigma) are drawn.
 ##' @param factor factorization matrix of the covariance matrix sigma; a matrix
 ##'        R such that R^T R = sigma. R is multiplied to the (n, d)-matrix of
 ##'        independent N(0,1) random variates in the construction from the *right*
 ##'        (hence the notation).
 ##' @return (n, d)-matrix with t_nu(loc, sigma) samples
 ##' @author Marius Hofert
-rstudent <- function(n, loc = rep(0, nrow(factor)), sigma, df = 3.5,
-                     factor = factorize(sigma))
+rStudent <- function(n, df, loc = rep(0, d), sigma, factor = factorize(sigma))
 {
     ## Checks
-    d <- length(loc)
-    stopifnot(n >= 1, nrow(factor) == d, df > 0)
+    d <- nrow(factor)
+    stopifnot(n >= 1, df > 0)
     ## Generate Z ~ N(0, I)
     Z <- matrix(rnorm(n * d), ncol = d) # (n, d)-matrix of N(0, 1)
     ## Generate Y ~ N(0, sigma)
@@ -34,13 +79,13 @@ rstudent <- function(n, loc = rep(0, nrow(factor)), sigma, df = 3.5,
 }
 
 
-### pstudent() #################################################################
+### pStudent() #################################################################
 
 ##' @title Re-order Variables According to their Expected Integration Limits
 ##'        (Precondition). See [genzbretz2002, p. 957]
 ##' @param C Cholesky (lower triangular) factor of the covariance matrix R
 ##' @param q dimension of the problem
-##' @param ... all the other parameters same as in pstudent
+##' @param ... all the other parameters same as in pStudent
 ##' @return list a, b, R, C of integration limits/covariance matrix/...
 ##'         after reordering has been performed
 ##' @return d vector indicating the new ordering
@@ -119,7 +164,7 @@ precond_t <- function(a, b, R, C, q, nu)
 ##' @param q dimension of the problem
 ##' @param ONE largest number x < 1 such that x != 1
 ##' @param ZERO smallest number x>0 such that x != 0
-##' @param ... all the other parameters same as pstudent
+##' @param ... all the other parameters same as pStudent
 ##' @return mean((f(U)+f(1-U))/2) (scalar)
 ##' @author Erik Hintz
 ##' @note Switches between f_ and g_ depending on formt
@@ -160,7 +205,7 @@ func <- function(n, skip, a, b, C, q, nu, ONE, ZERO, allinfina)
 ##' @param gam,eps,Nmax,N,n_init tuning parameters. N=number of rep'ns to get sigmahat, algorithm runs unitl gam*sighat < eps or total number evaluation >= Nmax. First loop uses n_init samples in each of the N runs.
 ##' @param precond logical. If TRUE, preconditioning as described in [genzbretz2002] pp. 955-956 is performed.
 ##' @author Erik Hintz
-pstudent <- function(a, b, R, nu, gam = 3.3, eps = 0.001, Nmax = 1e8, N = 10, n_init = 2^5, precond = TRUE)
+pStudent <- function(a, b, R, nu, gam = 3.3, eps = 0.001, Nmax = 1e8, N = 10, n_init = 2^5, precond = TRUE)
 {
     if(!is.matrix(R)) R <- as.matrix(R)
     q <- dim(R)[1] # dimension of the problem

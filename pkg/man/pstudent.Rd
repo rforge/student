@@ -1,12 +1,12 @@
-\name{pstudent}
-\alias{pstudent}
+\name{pStudent}
+\alias{pStudent}
 \title{Multivariate Student t Distribution Function}
 \description{
   Evaluation of the multivariate Student t distribution function
   (including non-integer degrees of freedom).
 }
 \usage{
-pstudent(a, b, R, nu, gam = 3.3, eps = 0.001, Nmax = 1e8, N = 10,
+pStudent(a, b, R, nu, gam = 3.3, eps = 0.001, Nmax = 1e8, N = 10,
          n_init = 2^5, precond = TRUE)
 }
 \arguments{
@@ -27,7 +27,7 @@ pstudent(a, b, R, nu, gam = 3.3, eps = 0.001, Nmax = 1e8, N = 10,
     is applied, that is, reordering the variables.}
 }
 \value{
-  \code{pstudent()} returns a list of length four, containing the
+  \code{pStudent()} returns a list of length four, containing the
   the estimated probabilities, the number of iterations, the total
   number of function evaluations and an error estimate.
 }
@@ -46,10 +46,10 @@ d <- 5
 set.seed(271)
 A <- matrix(runif(d * d), ncol = d)
 P <- cov2cor(A \%*\% t(A))
-## Evaluate pstudent()
+## Evaluate pStudent()
 a <- runif(d) * sqrt(d) * (-3) # random lower limit
 b <- runif(d) * sqrt(d) * 3 # random upper limit
 df <- 2.5 # degrees of freedom
-pstudent(a = a, b = b, R = P, nu = df)
+pStudent(a = a, b = b, R = P, nu = df)
 }
 \keyword{distribution}
