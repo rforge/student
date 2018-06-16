@@ -33,15 +33,15 @@ dStudent <- function(x, df, loc = rep(0, d), scale,
         ##                           = (x - mu)^T * (R^T R)^{-1} * (x - mu)
         ##                           = (x - mu)^T * scale^{-1} * (x - mu) = quadratic form
         z <- backsolve(factor, tx - loc, transpose = TRUE)
-        qform <- colSums(z^2) # = sum(z^T z)
+        maha <- colSums(z^2) # = sum(z^T z); Mahalanobis distance from x to mu w.r.t. scale
         ## log(sqrt(det(scale))) = log(det(scale))/2 = log(det(R^T R))/2 = log(det(R)^2)/2
         ## = log(prod(diag(R))) = sum(log(diag(R)))
         lrdet <- sum(log(diag(factor)))
         lres[notNA] <- if(is.finite(df)) {
                            df.d.2 <- (df + d) / 2
-                           lgamma(df.d.2) - lgamma(df/2) - (d/2) * log(df * pi) - lrdet - df.d.2 * log1p(qform / df)
+                           lgamma(df.d.2) - lgamma(df/2) - (d/2) * log(df * pi) - lrdet - df.d.2 * log1p(maha / df)
                        } else {
-                           - (d/2) * log(2 * pi) - lrdet - qform/2
+                           - (d/2) * log(2 * pi) - lrdet - maha/2
                        }
     }
     if(log) lres else exp(lres) # also works with NA, -Inf, Inf
